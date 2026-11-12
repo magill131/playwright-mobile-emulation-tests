@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskBoard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; color: #12263f; background: #f4f6f9; }
+    header { background: #0b1f3a; color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; min-height: 56px; }
+    header h1 { font-size: 1.1rem; margin: 0; }
+    #menu-toggle { display: none; min-width: 44px; min-height: 44px; background: transparent; color: #fff; border: 1px solid #2dd4bf; border-radius: 6px; font-size: 1.2rem; }
+    nav ul { list-style: none; display: flex; gap: 8px; margin: 0; padding: 0; }
+    nav a { display: inline-block; padding: 12px 14px; color: #cfe3f5; text-decoration: none; min-height: 44px; }
+    main { max-width: 720px; margin: 0 auto; padding: 16px; }
+    form { display: flex; gap: 8px; flex-wrap: wrap; }
+    input[type=text] { flex: 1 1 200px; min-height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #9fb3c8; border-radius: 6px; }
+    button.primary { min-height: 44px; min-width: 88px; padding: 0 16px; font-size: 1rem; background: #0f766e; color: #fff; border: 0; border-radius: 6px; }
+    #error { color: #b42318; min-height: 1.4em; margin: 8px 0; }
+    ul#tasks { list-style: none; margin: 0; padding: 0; }
+    ul#tasks li { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border: 1px solid #d9e2ec; border-radius: 6px; padding: 4px 12px; margin-bottom: 8px; min-height: 52px; }
+    ul#tasks li.done .label { text-decoration: line-through; color: #627d98; }
+    .label { overflow-wrap: anywhere; flex: 1; }
+    li button { min-width: 44px; min-height: 44px; background: transparent; border: 1px solid #9fb3c8; border-radius: 6px; font-size: 1rem; }
+    #count { color: #486581; }
+    @media (max-width: 640px) {
+      #menu-toggle { display: inline-block; }
+      nav { position: absolute; top: 56px; left: 0; right: 0; background: #0b1f3a; display: none; }
+      nav.open { display: block; }
+      nav ul { flex-direction: column; gap: 0; }
+      nav a { display: block; width: 100%; }
+      header { position: relative; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TaskBoard</h1>
+    <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="main-nav">&#9776;</button>
+    <nav id="main-nav" aria-label="Main">
+      <ul>
+        <li><a href="#all">All</a></li>
+        <li><a href="#active">Active</a></li>
+        <li><a href="#done">Done</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <form id="task-form" novalidate>
+      <label for="task-input" class="visually-hidden" style="position:absolute;left:-9999px">New task</label>
+      <input id="task-input" type="text" placeholder="Add a task" maxlength="80" autocomplete="off">
+      <button class="primary" type="submit">Add</button>
+    </form>
+    <div id="error" role="alert"></div>
+    <p id="count" aria-live="polite">0 tasks</p>
+    <ul id="tasks"></ul>
+  </main>
+  <script>
+    var KEY = 'taskboard.tasks';
+    var tasks = [];
+    try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { tasks = []; }
+    var filter = 'all';
+    var list = document.getElementById('tasks');
+    var input = document.getElementById('task-input');
+    var errorBox = document.getElementById('error');
+    var countBox = document.getElementById('count');
+    var nav = document.getElementById('main-nav');
+    var toggle = document.getElementById('menu-toggle');
+
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} }
+
+    function render() {
+      list.innerHTML = '';
+      var shown = tasks.filter(function (t) {
+        return filter === 'all' || (filter === 'done' ? t.done : !t.done);
+      });
+      shown.forEach(function (t) {
+        var li = document.createElement('li');
+        if (t.done) li.className = 'done';
+        var span = document.createElement('span');
+        span.className = 'label';
+        span.textContent = t.text;
+        var doneBtn = document.createElement('button');
+        doneBtn.textContent = t.done ? 'Undo' : 'Done';
+        doneBtn.setAttribute('aria-label', (t.done ? 'Undo ' : 'Complete ') + t.text);
+        doneBtn.onclick = function () { t.done = !t.done; save(); render(); };
+        var delBtn = document.createElement('button');
+        delBtn.textContent = '×';
+        delBtn.setAttribute('aria-label', 'Delete ' + t.text);
+        delBtn.onclick = function () { tasks = tasks.filter(function (x) { return x !== t; }); save(); render(); };
+        li.appendChild(span); li.appendChild(doneBtn); li.appendChild(delBtn);
+        list.appendChild(li);
+      });
+      var open = tasks.filter(function (t) { return !t.done; }).length;
+      countBox.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks') + ', ' + open + ' open';
+    }
+
+    document.getElementById('task-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = input.value.trim();
+      if (!text) { errorBox.textContent = 'Task cannot be empty'; return; }
+      if (tasks.some(function (t) { return t.text.toLowerCase() === text.toLowerCase(); })) {
+        errorBox.textContent = 'Task already exists'; return;
+      }
+      errorBox.textContent = '';
+      tasks.push({ text: text, done: false });
+      input.value = '';
+      save(); render();
+    });
+
+    toggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+
+    nav.addEventListener('click', function (e) {
+      if (e.target.tagName !== 'A') return;
+      filter = e.target.getAttribute('href').slice(1);
+      nav.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

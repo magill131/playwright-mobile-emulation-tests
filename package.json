@@ -1,0 +1,23 @@
+{
+  "name": "playwright-mobile-emulation-tests",
+  "version": "1.0.0",
+  "description": "Playwright device-emulation tests (iPhone, Pixel, iPad, desktop) for a responsive sample app",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node app/server.js",
+    "test": "playwright test",
+    "test:local": "LOCAL_CHROME=\"${LOCAL_CHROME:-/usr/bin/google-chrome}\" playwright test",
+    "typecheck": "tsc -p ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}
