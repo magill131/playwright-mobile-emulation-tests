@@ -22,7 +22,7 @@ test.describe('device emulation', () => {
     if (name === 'desktop-chrome') expect(info.ua).not.toMatch(/Mobile/);
   });
 
-  test('touch is enabled only on touch devices', async ({ page, hasTouch }, testInfo) => {
+  test('touch is enabled only on touch devices', async ({ page, hasTouch, browserName }, testInfo) => {
     await page.goto('/');
     const points = await page.evaluate(() => navigator.maxTouchPoints);
     if (testInfo.project.name === 'desktop-chrome') {
@@ -30,7 +30,12 @@ test.describe('device emulation', () => {
       expect(points).toBe(0);
     } else {
       expect(hasTouch).toBe(true);
-      expect(points).toBeGreaterThan(0);
+      // WebKit reports maxTouchPoints as 0 even with touch enabled (found by the
+      // first CI run), so only Chromium can be checked this way. Real touch input
+      // on WebKit is covered by the tap-based tests in navigation and tasks specs.
+      if (browserName === 'chromium') {
+        expect(points).toBeGreaterThan(0);
+      }
     }
   });
 });

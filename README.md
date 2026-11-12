@@ -23,7 +23,7 @@ Tests that only make sense at one width skip themselves on the other, so the 72 
 
 ## Results
 
-Run in a sandbox with the system Chrome (Chromium) standing in for every device: **62 passed, 10 skipped, 0 failed** (typecheck clean).
+Local run, with the system Chrome (Chromium) standing in for every device: **62 passed, 10 skipped, 0 failed** (typecheck clean).
 
 I also broke the app five ways to confirm the suite can fail. Each bug was caught:
 
@@ -35,7 +35,7 @@ I also broke the app five ways to confirm the suite can fail. Each bug was caugh
 | Menu stays open after choosing a filter | navigation filter test |
 | Removed the duplicate-task check | duplicate-task test |
 
-**Not run yet:** the iPhone and iPad projects on real WebKit. Locally they ran on Chromium with the device's viewport, scale factor, touch and user agent. The GitHub Actions workflow installs WebKit, so the first CI run is the first WebKit result.
+**WebKit:** the first GitHub Actions run executed the iPhone and iPad projects on real WebKit. Everything passed except one assertion: `navigator.maxTouchPoints` is 0 on WebKit even with touch enabled, so that check now runs on Chromium only. Touch on WebKit is still proven by the tap-based tests.
 
 **This is emulation, not real devices.** It checks layout, touch input and breakpoints. It does not cover real iOS Safari or Android Chrome quirks, native gestures or hardware. Real-device coverage would need Appium or a device cloud.
 
